@@ -42,7 +42,7 @@ func main() {
 	sensor_data :=get_computer_temperature()
 	sensor_key := "SMC CPU A DIODE"
 	sensor_value, _ := strconv.Atoi(sensor_data[sensor_key])
-	hostname := "r1-4-dvm.rwc03.kabamdco.net"
+	hostname := "127.0.0.1"
 	port_number := 9121
 	client := statsd.New(hostname, port_number)
 	client.Gauge("koc.test.smc_cpu_a_diode", sensor_value)
