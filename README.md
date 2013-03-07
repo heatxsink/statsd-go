@@ -11,3 +11,6 @@ I have implemented gauges ... other implementations do not do this.
 
 	$ cd examples
 	$ go run example.go
+
+## the license ##
+this code is completely free under the mit license: [http://mit-license.org/](http://mit-license.org/).
