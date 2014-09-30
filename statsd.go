@@ -56,7 +56,7 @@ func (client *StatsdClient) Close() {
  * t1 := time.Now()
  * expensiveCall()
  * t2 := time.Now()
- * duration := int64(t2.Sub(t1)/time.Millisecond)
+ * duration := int64(t2.Sub(t1)/time.Mi	llisecond)
  * client.Timing("foo.time", duration)
  **/
 func (client *StatsdClient) Timing(stat string, time int64) {
@@ -134,6 +134,11 @@ func (client *StatsdClient) Decrement(stat string) {
 func (client *StatsdClient) DecrementWithSampling(stat string, sampleRate float32) {
 	stats := []string{stat}
 	client.UpdateStats(stats[:], -1, sampleRate, "c")
+}
+
+func (client *StatsdClient) Counter(stat string, value int) {
+	stats := []string{stat}
+	client.UpdateStats(stats[:], 1, 1, "c")
 }
 
 /**

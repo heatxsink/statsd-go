@@ -1,16 +1,36 @@
 statsd-go
 =========
-I have implemented gauges ... other implementations do not do this.
+A statsd golang package. What is the difference between this version and others? This one has gauge support.
 
-## running the example ##
-1. you must install [Temperature Monitor](http://www.bresink.com/osx/TemperatureMonitor.html) to get temp data from OS X.
-1. install statsd-go
+Setup
+-----
+Get the following golang packages.
 
+	
 	$ go get github.com/heatxsink/statsd-go
-1. run example
+
+Run the example
+---------------
+1. Install [Temperature Monitor](http://www.bresink.com/osx/TemperatureMonitor.html) to get temp data from OS X.
+1. Then ...
+
+	$ go get github.com/heatxsink/go-osx-tempmonitor
+
+1. Then ...
 
 	$ cd examples
 	$ go run example.go
 
-## the license ##
-this code is completely free under the mit license: [http://mit-license.org/](http://mit-license.org/).
+
+Example
+-------
+```go
+import(
+	"github.com/heatxsink/statsd-go"
+)
+
+func main() {
+	client := statsd.New("127.0.0.1", 9121)
+	client.Gauge("mbp.test.smc_cpu_a_diode", 75)
+}
+```
