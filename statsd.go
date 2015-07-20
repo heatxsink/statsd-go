@@ -110,6 +110,21 @@ func (client *StatsdClient) IncrementWithSampling(stat string, sampleRate float3
 	client.UpdateStats(stats[:], 1, sampleRate, "c")
 }
 
+
+/**
+ * Increments one stat counter by value provided without sampling
+ *
+ * Usage:
+ *
+ *     import "statsd"
+ *     client := statsd.New('localhost', 8125)
+ *     client.IncrementByValue('foo.bar', 5)
+ **/
+func (client *StatsdClient) IncrementByValue(stat string, val int) {
+	stats := []string{stat}
+	client.UpdateStats(stats, val, 1, "c")
+}
+
 /**
  * Decrements one stat counter without sampling
  * Usage:
