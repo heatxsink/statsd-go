@@ -122,7 +122,7 @@ func (client *StatsdClient) IncrementWithSampling(stat string, sampleRate float3
  **/
 func (client *StatsdClient) IncrementByValue(stat string, val int) {
 	stats := []string{stat}
-	client.UpdateStats(stats, val, 1)
+	client.UpdateStats(stats, val, 1, "c")
 }
 
 /**
