@@ -30,7 +30,8 @@ import(
 )
 
 func main() {
-	client := statsd.New("127.0.0.1", 9121)
-	client.Gauge("mbp.test.smc_cpu_a_diode", 75)
+	ss := statsd.New("127.0.0.1", 9121)
+	ss.SetPrefix("omg")
+	ss.Gauge("mbp.test.smc_cpu_a_diode", 75)
 }
 ```
