@@ -1,193 +1,103 @@
 package statsd
 
 import (
-	"net"
 	"fmt"
-	"log"
 	"math/rand"
+	"net"
 	"time"
 )
 
-type StatsdClient struct {
-	Host string
-	Port int
-	conn net.Conn
+type Statsd struct {
+	host       string
+	port       int
+	Prefix     string
+	connection net.Conn
 }
 
-/**
- * Factory method to initialize udp connection
- * Usage:
- *
- * import "statsd"
- * client := statsd.New('localhost', 8125)
- **/
-func New(host string, port int) *StatsdClient {
-	client := StatsdClient{Host: host, Port: port}
-	client.Open()
-	return &client
+func NewWithPrefix(host string, port int, prefix string) *Statsd {
+	return &Statsd{host: host, port: port, Prefix: prefix}
 }
 
-/**
- * Method to open udp connection, called by default client factory
- **/
-func (client *StatsdClient) Open() {
-	connectionString := fmt.Sprintf("%s:%d", client.Host, client.Port)
+func New(host string, port int) *Statsd {
+	return &Statsd{host: host, port: port}
+}
+
+func (s *Statsd) Open() error {
+	connectionString := fmt.Sprintf("%s:%d", s.host, s.port)
 	conn, err := net.Dial("udp", connectionString)
 	if err != nil {
-		log.Println(err)
+		return err
 	}
-	client.conn = conn
+	s.connection = conn
+	return nil
 }
 
-/**
- * Method to close udp connection
- **/
-func (client *StatsdClient) Close() {
-	client.conn.Close()
+func (s *Statsd) Close() {
+	s.connection.Close()
 }
 
-/*
- * Log timing information (in milliseconds) without sampling
- * Usage:
- *
- * import "statsd"
- * import "time"
- * client := statsd.New('localhost', 8125)
- * t1 := time.Now()
- * expensiveCall()
- * t2 := time.Now()
- * duration := int64(t2.Sub(t1)/time.Mi	llisecond)
- * client.Timing("foo.time", duration)
- **/
-func (client *StatsdClient) Timing(stat string, time int64) {
+func (s *Statsd) Timing(stat string, time int64) error {
 	updateString := fmt.Sprintf("%d|ms", time)
 	stats := map[string]string{stat: updateString}
-	client.Send(stats, 1)
+	return s.send(stats, 1)
 }
 
-/**
- * Log timing information (in milliseconds) with sampling
- * Usage:
- *
- * import "statsd"
- * import "time"
- * client := statsd.New('localhost', 8125)
- * t1 := time.Now()
- * expensiveCall()
- * t2 := time.Now()
- * duration := int64(t2.Sub(t1)/time.Millisecond)
- * client.TimingWithSampleRate("foo.time", duration, 0.2)
- **/
-func (client *StatsdClient) TimingWithSampleRate(stat string, time int64, sampleRate float32) {
+func (s *Statsd) TimingWithSampleRate(stat string, time int64, sampleRate float32) error {
 	updateString := fmt.Sprintf("%d|ms", time)
 	stats := map[string]string{stat: updateString}
-	client.Send(stats, sampleRate)
+	return s.send(stats, sampleRate)
 }
 
-/**
- * Increments one stat counter without sampling
- * Usage:
- *
- * import "statsd"
- * client := statsd.New('localhost', 8125)
- * client.Increment('foo.bar')
- **/
-func (client *StatsdClient) Increment(stat string) {
+func (s *Statsd) Increment(stat string) error {
 	stats := []string{stat}
-	client.UpdateStats(stats, 1, 1, "c")
+	return s.UpdateStats(stats, 1, 1, "c")
 }
 
-/**
- * Increments one stat counter with sampling
- * Usage:
- *
- * import "statsd"
- * client := statsd.New('localhost', 8125)
- * client.Increment('foo.bar', 0.2)
- **/
-func (client *StatsdClient) IncrementWithSampling(stat string, sampleRate float32) {
+func (s *Statsd) IncrementWithSampling(stat string, sampleRate float32) error {
 	stats := []string{stat}
-	client.UpdateStats(stats[:], 1, sampleRate, "c")
+	return s.UpdateStats(stats[:], 1, sampleRate, "c")
 }
 
-/**
- * Decrements one stat counter without sampling
- * Usage:
- *
- * import "statsd"
- * client := statsd.New('localhost', 8125)
- * client.Decrement('foo.bar')
- **/
-func (client *StatsdClient) Decrement(stat string) {
+func (s *Statsd) Decrement(stat string) error {
 	stats := []string{stat}
-	client.UpdateStats(stats[:], -1, 1, "c")
+	return s.UpdateStats(stats[:], -1, 1, "c")
 }
 
-/**
- * Decrements one stat counter with sampling
- * Usage:
- *
- * import "statsd"
- * client := statsd.New('localhost', 8125)
- * client.Decrement('foo.bar', 0.2)
- **/
-func (client *StatsdClient) DecrementWithSampling(stat string, sampleRate float32) {
+func (s *Statsd) DecrementWithSampling(stat string, sampleRate float32) error {
 	stats := []string{stat}
-	client.UpdateStats(stats[:], -1, sampleRate, "c")
+	return s.UpdateStats(stats[:], -1, sampleRate, "c")
 }
 
-func (client *StatsdClient) Counter(stat string, value int) {
+func (s *Statsd) Counter(stat string, value int) error {
 	stats := []string{stat}
-	client.UpdateStats(stats[:], 1, 1, "c")
+	return s.UpdateStats(stats[:], 1, 1, "c")
 }
 
-/**
- * Gauge without sampling
- * Usage:
- *
- * import "statsd"
- * client := statsd.New('localhost', 8125)
- * client.Gauge('foo.bar', value)
- **/
-func (client *StatsdClient) Gauge(stat string, value int) {
+func (s *Statsd) Gauge(stat string, value int) error {
 	stats := []string{stat}
-	client.UpdateStats(stats[:], value, 1, "g")
+	return s.UpdateStats(stats[:], value, 1, "g")
 }
 
-/**
- * Gauge with sampling
- * Usage:
- *
- * import "statsd"
- * client := statsd.New('localhost', 8125)
- * client.Gauge('foo.bar', value, 0.2)
- **/
-func (client *StatsdClient) GaugeWithSampling(stat string, value int, sampleRate float32) {
+func (s *Statsd) GaugeWithSampling(stat string, value int, sampleRate float32) error {
 	stats := []string{stat}
-	client.UpdateStats(stats[:], value, sampleRate, "g")
+	return s.UpdateStats(stats[:], value, sampleRate, "g")
 }
 
-/**
- * Arbitrarily updates a list of stats by a delta
- **/
-func (client *StatsdClient) UpdateStats(stats []string, delta int, sampleRate float32, metric string) {
+func (s *Statsd) UpdateStats(stats []string, delta int, sampleRate float32, metric string) error {
 	statsToSend := make(map[string]string)
-	for _,stat := range stats {
+	for _, stat := range stats {
 		updateString := fmt.Sprintf("%d|%s", delta, metric)
 		statsToSend[stat] = updateString
 	}
-	client.Send(statsToSend, sampleRate)
+	return s.send(statsToSend, sampleRate)
 }
 
-/**
- * Sends data to udp statsd daemon
- **/
-func (client *StatsdClient) Send(data map[string]string, sampleRate float32) {
+func (s *Statsd) send(data map[string]string, sampleRate float32) error {
 	sampledData := make(map[string]string)
 	if sampleRate < 1 {
 		r := rand.New(rand.NewSource(time.Now().Unix()))
 		if rNum := r.Float32(); rNum <= sampleRate {
-			for stat,value := range data {
+			for stat, value := range data {
 				sampledUpdateString := fmt.Sprintf("%s|@%f", value, sampleRate)
 				sampledData[stat] = sampledUpdateString
 			}
@@ -197,10 +107,11 @@ func (client *StatsdClient) Send(data map[string]string, sampleRate float32) {
 	}
 
 	for k, v := range sampledData {
-		update_string := fmt.Sprintf("%s:%s", k, v)
-		_,err := fmt.Fprintf(client.conn, update_string)
+		updateString := fmt.Sprintf("%s:%s", k, v)
+		_, err := fmt.Fprintf(s.connection, updateString)
 		if err != nil {
-			log.Println(err)
+			return err
 		}
 	}
+	return nil
 }

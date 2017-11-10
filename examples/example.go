@@ -5,9 +5,12 @@
 package main
 
 import (
-	"github.com/heatxsink/go-osx-tempmonitor"
-	"github.com/heatxsink/statsd-go"
+	"fmt"
+	"log"
 	"strconv"
+
+	tempmonitor "github.com/heatxsink/go-osx-tempmonitor"
+	statsd "github.com/heatxsink/statsd-go"
 )
 
 func main() {
@@ -15,10 +18,15 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	sensor_key := "SMC CPU A DIODE"
-	sensor_value, _ := strconv.Atoi(data[sensor_key])
-	hostname := "127.0.0.1"
-	port_number := 9121
-	client := statsd.New(hostname, port_number)
-	client.Gauge("mbp.test.smc_cpu_a_diode", sensor_value)
+	sensorKey := "SMC CPU A DIODE"
+	sensorValue, _ := strconv.Atoi(data[sensorKey])
+	ss := statsd.New("127.0.0.1", 9125)
+	err := ss.Open()
+	if err != nil {
+		log.Info(err)
+	}
+	err := ss.Gauge("mbp.test.smc_cpu_a_diode", sensorValue)
+	if err != nil {
+		log.Info(err)
+	}
 }
